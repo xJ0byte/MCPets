@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------------
+#  MCPets - Texte
+#
+#  Alle Spieler-Texte stehen hier. Gesendet werden sie ueber Sharks
+#  Message-System: erst PlaceholderAPI, dann MiniMessage, mit globalem Prefix und
+#  den Farb-Tags aus Sharks config.json (<primary>, <secondary>, <text>, <error>,
+#  <success>, <accent>, <muted>).
+#
+#  Platzhalter: <pet_name>, <pet_default_name>, <pet_id>, <owner>, <player>
+# ---------------------------------------------------------------------------
+
+pet:
+  spawned: "<text>Dein Pet <secondary><pet_name> <text>ist jetzt bei dir."
+  despawned: "<text>Dein Pet wurde abgesetzt."
+  none-active: "<text>Du hast gerade kein Pet draussen."
+  not-owned: "<text>Dieses Pet gehoert dir nicht."
+  spawn-failed: "<text>Dein Pet konnte nicht gerufen werden. Melde das bitte einem Teammitglied."
+  received: "<text>Du hast das Pet <secondary><pet_name> <text>erhalten."
+  lost: "<text>Dir wurde das Pet <secondary><pet_name> <text>weggenommen."
+  name-set: "<text>Dein Pet heisst jetzt <secondary><name><text>."
+  name-reset: "<text>Der Name wurde zurueckgesetzt."
+  name-empty: "<text>Du musst einen Namen eingeben."
+  name-too-long: "<text>Der Name darf hoechstens <secondary><max> <text>Zeichen lang sein."
+  name-blocked: "<text>Diesen Namen darfst du nicht benutzen."
+  no-active-name: "<muted>keins"
+
+menu:
+  unknown: "<text>Das Menue <secondary><menu> <text>gibt es nicht. Pruef die menus.yml."
+
+dialog:
+  rename:
+    title: "<primary>Pet umbenennen"
+    label: "<text>Neuer Name"
+    confirm: "<success>Speichern"
+    cancel: "<error>Abbrechen"
+
+command:
+  admin-usage: "<text>Nutzung<muted>: <secondary>/pets admin reload <muted>| <secondary>/pets admin give|remove <spieler> <pet>"
+  reloaded: "<text>Neu geladen<muted>: <secondary><pets> <text>Pets und <secondary><menus> <text>Menues."
+  reload-failed: "<text>Neuladen fehlgeschlagen<muted>: <secondary><reason>"
+  unknown-pet: "<text>Es gibt kein Pet mit der ID <secondary><pet><text>."
+  unknown-player: "<text>Den Spieler <secondary><player> <text>kennt der Server nicht."
+  storage-failed: "<text>Die Datenbank hat nicht geantwortet. Versuch es gleich nochmal."
+  give-success: "<text><player> <text>besitzt jetzt <secondary><pet_name><text>."
+  give-already: "<text><player> <text>besitzt <secondary><pet_name> <text>bereits."
+  remove-success: "<text><player> <text>besitzt <secondary><pet_name> <text>nicht mehr."
+  remove-already: "<text><player> <text>besitzt <secondary><pet_name> <text>gar nicht."

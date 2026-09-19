@@ -1,0 +1,29 @@
+name: MCPets
+version: '${version}'
+main: de.j0byte.mcpets.paper.MCPetsPlugin
+api-version: '${apiVersion}'
+description: Modellierte Pets auf Basis von BetterModel, Shark, Octopus und Chameleon.
+author: j0byte
+
+dependencies:
+  server:
+    Shark:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    ByteOctopus:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    Chameleon:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    CommandAPI:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    BetterModel:
+      load: BEFORE
+      required: true
+      join-classpath: true

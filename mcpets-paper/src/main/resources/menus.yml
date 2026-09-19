@@ -1,0 +1,255 @@
+# ---------------------------------------------------------------------------
+#  MCPets - Menues
+#
+#  Hier steht das komplette GUI. Im Java-Code gibt es keine Slot-Nummer, kein
+#  Material und keinen Text - alles kommt aus dieser Datei.
+#
+#  Pro Menue:
+#    title         MiniMessage-Titel. <pet_name>, <pet_id> und <owner> stehen bereit.
+#    rows          Zeilen (1-6).
+#    fill-borders  true = Fueller nur am Rand, false = Fueller ueberall.
+#    filler        Das Fueller-Item. Weglassen = kein Fueller.
+#    pet-list      Der paginierte Pet-Bereich. Weglassen = Menue ohne Pet-Liste.
+#    controls      Slots fuer Blaettern, Suche und Sortierung. -1 blendet den Button aus.
+#                  Die Buttons selbst kommen aus Sharks globaler config.json.
+#    items         Alle Buttons. Der Schluessel ist frei waehlbar.
+#
+#  Pro Button:
+#    slot          Slot im Inventar, -1 blendet ihn aus.
+#    type          STATIC (Standard) oder ACTIVE_PET fuer den Button, der das
+#                  gerade aktive Pet zeigt.
+#    action        NONE, OPEN_MENU, CLOSE, DESPAWN, OPEN_ACTIVE_SETTINGS,
+#                  RENAME, RESET_NAME
+#    target        Ziel-Menue bei OPEN_MENU.
+#    item          Das Item.
+#    empty-item    Nur bei type: ACTIVE_PET - was gezeigt wird, wenn kein Pet aktiv ist.
+#
+#  pet-list.lore-blocks ersetzt in der Pet-Lore (pets.yml) eine Zeile, die nur aus
+#  einem Marker besteht, durch die Zeilen des passenden Zustands. Zustaende sind
+#  active, owned und not-owned.
+# ---------------------------------------------------------------------------
+
+menus:
+
+  # ------------------------------------------------------------------ Hauptmenue
+  main:
+    title: "<primary>Deine Pets"
+    rows: 3
+    fill-borders: false
+    filler:
+      material: GRAY_STAINED_GLASS_PANE
+      name: " "
+      custom-model-data: 0
+
+    items:
+
+      active-pet:
+        slot: 11
+        type: ACTIVE_PET
+        action: OPEN_ACTIVE_SETTINGS
+        item:
+          material: NAME_TAG
+          name: "<primary>Aktives Pet<muted>: <secondary><pet_name>"
+          custom-model-data: 0
+          lore:
+            - "<muted>Dein Pet ist gerade unterwegs."
+            - ""
+            - "<text>Klick <muted>- Einstellungen oeffnen"
+        empty-item:
+          material: BARRIER
+          name: "<error>Kein Pet aktiv"
+          custom-model-data: 0
+          lore:
+            - "<muted>Du hast gerade kein Pet draussen."
+            - ""
+            - "<text>Waehl unten eines deiner Pets aus."
+
+      all-pets:
+        slot: 13
+        action: OPEN_MENU
+        target: all-pets
+        item:
+          material: CHEST
+          name: "<primary>Alle Pets"
+          custom-model-data: 0
+          lore:
+            - "<muted>Zeigt jedes Pet, das es gibt."
+            - ""
+            - "<text>Klick <muted>- oeffnen"
+
+      own-pets:
+        slot: 15
+        action: OPEN_MENU
+        target: own-pets
+        item:
+          material: ENDER_CHEST
+          name: "<primary>Deine Pets"
+          custom-model-data: 0
+          lore:
+            - "<muted>Zeigt nur die Pets, die dir gehoeren."
+            - ""
+            - "<text>Klick <muted>- oeffnen"
+
+      close:
+        slot: 22
+        action: CLOSE
+        item:
+          material: BARRIER
+          name: "<error>Schliessen"
+          custom-model-data: 0
+
+  # ------------------------------------------------------------------ Alle Pets
+  all-pets:
+    title: "<primary>Alle Pets"
+    rows: 6
+    fill-borders: true
+    filler:
+      material: GRAY_STAINED_GLASS_PANE
+      name: " "
+      custom-model-data: 0
+
+    pet-list:
+      mode: ALL
+      area:
+        from-row: 1
+        from-column: 1
+        to-row: 4
+        to-column: 7
+      lore-blocks:
+        status:
+          active:
+            - "<success>Gerade aktiv"
+          owned:
+            - "<success>Du besitzt dieses Pet"
+          not-owned:
+            - "<error>Du besitzt dieses Pet nicht"
+        actions:
+          active:
+            - "<text>Linksklick <muted>- neu rufen"
+            - "<text>Rechtsklick <muted>- Einstellungen"
+          owned:
+            - "<text>Linksklick <muted>- aktivieren"
+            - "<text>Rechtsklick <muted>- Einstellungen"
+          not-owned:
+            - "<muted>Erst freischalten, dann nutzbar."
+
+    controls:
+      previous: 48
+      next: 50
+      search: 46
+      sort: 52
+
+    items:
+      back:
+        slot: 49
+        action: OPEN_MENU
+        target: main
+        item:
+          material: ARROW
+          name: "<text>Zurueck"
+          custom-model-data: 0
+
+  # ------------------------------------------------------------------ Eigene Pets
+  own-pets:
+    title: "<primary>Deine Pets"
+    rows: 6
+    fill-borders: true
+    filler:
+      material: GRAY_STAINED_GLASS_PANE
+      name: " "
+      custom-model-data: 0
+
+    pet-list:
+      mode: OWNED
+      area:
+        from-row: 1
+        from-column: 1
+        to-row: 4
+        to-column: 7
+      lore-blocks:
+        status:
+          active:
+            - "<success>Gerade aktiv"
+          owned:
+            - "<success>Bereit"
+        actions:
+          active:
+            - "<text>Linksklick <muted>- neu rufen"
+            - "<text>Rechtsklick <muted>- Einstellungen"
+          owned:
+            - "<text>Linksklick <muted>- aktivieren"
+            - "<text>Rechtsklick <muted>- Einstellungen"
+
+    controls:
+      previous: 48
+      next: 50
+      search: 46
+      sort: 52
+
+    items:
+      back:
+        slot: 49
+        action: OPEN_MENU
+        target: main
+        item:
+          material: ARROW
+          name: "<text>Zurueck"
+          custom-model-data: 0
+
+  # ------------------------------------------------------------------ Einstellungen
+  pet-settings:
+    title: "<primary><pet_name>"
+    rows: 3
+    fill-borders: false
+    filler:
+      material: GRAY_STAINED_GLASS_PANE
+      name: " "
+      custom-model-data: 0
+
+    items:
+
+      rename:
+        slot: 11
+        action: RENAME
+        item:
+          material: NAME_TAG
+          name: "<primary>Namen aendern"
+          custom-model-data: 0
+          lore:
+            - "<muted>Aktuell<text>: <secondary><pet_name>"
+            - ""
+            - "<text>Klick <muted>- Eingabefenster oeffnen"
+
+      reset-name:
+        slot: 13
+        action: RESET_NAME
+        item:
+          material: WATER_BUCKET
+          name: "<primary>Namen zuruecksetzen"
+          custom-model-data: 0
+          lore:
+            - "<muted>Setzt den Namen zurueck auf<text>:"
+            - "<secondary><pet_default_name>"
+            - ""
+            - "<text>Klick <muted>- zuruecksetzen"
+
+      despawn:
+        slot: 15
+        action: DESPAWN
+        item:
+          material: BARRIER
+          name: "<error>Pet absetzen"
+          custom-model-data: 0
+          lore:
+            - "<muted>Schickt dein Pet wieder weg."
+            - ""
+            - "<text>Klick <muted>- absetzen"
+
+      back:
+        slot: 22
+        action: OPEN_MENU
+        target: own-pets
+        item:
+          material: ARROW
+          name: "<text>Zurueck"
+          custom-model-data: 0
