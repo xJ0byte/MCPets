@@ -10,6 +10,7 @@ alles Querschnittliche kommt aus den eigenen Frameworks:
 | MongoDB, Redis und RabbitMQ | **Octopus** |
 | Modelle und Animationen | **BetterModel** |
 | Commands | **CommandAPI 12** |
+| Custom-Items in Menues (optional) | **CraftEngine** / ItemsAdder |
 
 MythicMobs, ModelEngine und MySQL werden nicht mehr gebraucht.
 
@@ -65,7 +66,36 @@ Auf dem Paper-Server muessen laufen: `Shark`, `ByteOctopus`, `Chameleon`,
 `CommandAPI` und `BetterModel`. Alle fuenf stehen in der `paper-plugin.yml` mit
 `load: BEFORE` und `join-classpath: true`.
 
+`CraftEngine` ist optional (`required: false`) - ohne startet MCPets ganz normal,
+nur `namespace:id`-Items werden dann nicht ueber CraftEngine aufgeloest.
+
 Auf dem Proxy reichen `ByteOctopus` und `Chameleon`.
+
+## Custom-Items
+
+Jedes `material` in `pets.yml` und `menus.yml` darf sein:
+
+* ein Bukkit-Material - `DIAMOND`, `BONE`, `ARROW`
+* ein CraftEngine-Item - `meinpack:drachen_token`
+* ein ItemsAdder-Item - `meinpack:drachen_token`
+
+Bei `namespace:id` wird der Reihe nach gefragt: erst CraftEngine, dann
+ItemsAdder (ueber Shark), dann das Bukkit-Material. Greift nichts, erscheint
+eine Barrier - ein Tippfehler im Item bricht also kein Menue.
+
+`name`, `lore` und `custom-model-data` ueberschreiben das, was das Custom-Item
+mitbringt. Wer sie weglaesst, behaelt Name und Lore aus CraftEngine:
+
+```yaml
+icon:
+  material: meinpack:drachen_token   # Item kommt aus CraftEngine
+  name: "<secondary><pet_name>"      # Name kommt aus MCPets
+  lore:
+    - "<status>"
+```
+
+CraftEngine wird spielerbezogen gefragt, seine eigenen Platzhalter im Item
+funktionieren also weiterhin.
 
 ## Commands
 

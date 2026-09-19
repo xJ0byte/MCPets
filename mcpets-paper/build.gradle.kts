@@ -9,6 +9,7 @@ val paperApiVersion = property("paperApiVersion") as String
 val paperApiTarget = property("paperApiTarget") as String
 val commandApiVersion = property("commandApiVersion") as String
 val betterModelVersion = property("betterModelVersion") as String
+val craftEngineVersion = property("craftEngineVersion") as String
 val guiceVersion = property("guiceVersion") as String
 
 val sharkApiJar = property("sharkApiJar") as String
@@ -39,6 +40,11 @@ dependencies {
     // BetterModel laeuft als eigenes Plugin.
     compileOnly("io.github.toxicity188:bettermodel-api:$betterModelVersion")
     compileOnly("io.github.toxicity188:bettermodel-bukkit-api:$betterModelVersion")
+
+    // CraftEngine ist optional: ohne installiertes CraftEngine laeuft MCPets ganz normal
+    // weiter, nur "namespace:id"-Items werden dann nicht aufgeloest.
+    compileOnly("net.momirealms:craft-engine-bukkit:$craftEngineVersion")
+    compileOnly("net.momirealms:craft-engine-core:$craftEngineVersion")
 }
 
 tasks.processResources {

@@ -27,3 +27,9 @@ dependencies:
       load: BEFORE
       required: true
       join-classpath: true
+    # Optional: nur noetig, wenn in den Configs CraftEngine-Items als
+    # "namespace:id" stehen. Ohne CraftEngine startet MCPets ganz normal.
+    CraftEngine:
+      load: BEFORE
+      required: false
+      join-classpath: true
