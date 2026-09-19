@@ -1,72 +1,121 @@
-<img src="https://i.ibb.co/7RYYYZb/spigot-mcpets-banner.png" alt="MC Pets logo">
+# MCPets
 
-Welcome to MC Pets!
+Modellierte Pets fuer Paper-Server. Das Plugin bringt selbst fast nichts mit -
+alles Querschnittliche kommt aus den eigenen Frameworks:
 
-Navigate through the [wiki pages](https://mcpets.gitbook.io/mcpets/) to find whatever information you need about the plugin.
-Looking for help ? Join the [Discord](https://discord.com/invite/p7QTm2gUyf) !
+| Aufgabe | Erledigt von |
+|---|---|
+| Configs (`config.yml`, `pets.yml`, `menus.yml`, `messages.yml`) | **Chameleon** |
+| Menues, Items und Nachrichten | **Shark** |
+| MongoDB, Redis und RabbitMQ | **Octopus** |
+| Modelle und Animationen | **BetterModel** |
+| Commands | **CommandAPI 12** |
 
-<img src="https://i.imgur.com/saPEOAJ.png" alt="Requirements">
+MythicMobs, ModelEngine und MySQL werden nicht mehr gebraucht.
 
-✨ Check the [requirements on the Wiki](https://mcpets.gitbook.io/mcpets/common-issues/common-issues/requirements).
+## Module
 
-<img src="https://i.imgur.com/KadwjCO.png" alt="Features">
+| Modul | Inhalt |
+|---|---|
+| `mcpets-api` | Mongo-Dokumente und die Sync-Nachricht - von beiden Plattformen genutzt |
+| `mcpets-paper` | Das Server-Plugin: Menues, Pets, Commands |
+| `mcpets-velocity` | Der Proxy-Teil: Reload an alle Server, Sync-Nachrichten mitlesen |
 
-⭕ **3D modeled pets** with ANY behavior, skills, effects and more based on MythicMobs and ModelEngine
+## Bauen
 
-⭕ Create **mounts** using ModelEngine and implement them easily with MCPets
+```bash
+./gradlew build
+```
 
-⭕ Unique **inventory** per pet
+Die fertigen Jars liegen danach unter
+`mcpets-paper/build/libs/MCPets-Paper-<version>.jar` und
+`mcpets-velocity/build/libs/MCPets-Velocity-<version>.jar`.
 
-⭕ **Pet statistics** with MCPets 3.0.0 : experience, health, damage modifiers for skills and more
+Java 25 wird bei Bedarf automatisch nachgeladen (Foojay-Toolchain-Resolver), eine
+lokale Installation ist also nicht noetig.
 
-⭕ **Taming**, **evolutions** and **pet food** system with MCPets 3.0.0
+### Framework-Jars in `libs/`
 
-⭕ Customizable **in-game GUI interface** : summon pets, show their stats, custom names, mount, skins, inventory... Organizable in categories
+Shark, Octopus und Chameleon laufen als eigene Plugins auf dem Server. Sie werden
+deshalb **nicht** ueber JitPack eingebunden, sondern als lokale Jars per
+`compileOnly` - und landen nie im eigenen Jar.
 
-⭕ **Give orders** to your pets using the Signal Stick
+```
+libs/shark-api-1.0.0.jar
+libs/shark-gui-1.0.0.jar
+libs/octopus-api-1.1.0.jar
+libs/chameleon-api-1.0.0.jar
+```
 
-⭕ Permission-based system and **customizable permission for each pet**, showing the pet or not in the GUI depending on the player having the permission for it
+Aktualisiert werden sie von Hand, wenn sich eine der APIs weiterentwickelt:
 
-⭕ **Flags** to manage pet interactions with WorldGuard
+```bash
+# im jeweiligen Framework-Repository
+./gradlew :shark-api:jar :shark-gui:jar    # Shark
+./gradlew :api:jar                          # Octopus
+./gradlew :chameleon-api:jar                # Chameleon
+```
 
-⭕ MySQL support
+Die Dateinamen stehen in `gradle.properties` - wer eine andere Version ablegt,
+passt sie dort an.
 
-⭕ **Velocity cross-server pet sync** — active pets follow players seamlessly between servers on a Velocity network *(see [mcpets-velocity/README.md](mcpets-velocity/README.md))*
+## Server-Voraussetzungen
 
-✨ Need a demo pet to start with ? Check out [Sleepy the Otter](https://mcmodels.net/products/11051/sleepy-the-otter) !
+Auf dem Paper-Server muessen laufen: `Shark`, `ByteOctopus`, `Chameleon`,
+`CommandAPI` und `BetterModel`. Alle fuenf stehen in der `paper-plugin.yml` mit
+`load: BEFORE` und `join-classpath: true`.
 
----
+Auf dem Proxy reichen `ByteOctopus` und `Chameleon`.
 
-## Velocity Cross-Server Sync
+## Commands
 
-This fork adds a companion Velocity proxy plugin (`mcpets-velocity/`) that keeps a player's active pet consistent across all synced servers in your network.
+| Command | Permission | Wirkung |
+|---|---|---|
+| `/pets` | `mcpets.use` | oeffnet das Hauptmenue |
+| `/pets admin reload` | `mcpets.admin` | laedt alle Configs neu - auch auf den anderen Servern |
+| `/pets admin give <spieler> <pet>` | `mcpets.admin` | gibt einem Spieler ein Pet |
+| `/pets admin remove <spieler> <pet>` | `mcpets.admin` | nimmt es wieder weg |
+| `/mcpetsproxy reload` (Velocity) | `mcpets.admin` | schickt den Reload vom Proxy aus an alle Server |
 
-**How it works:**
-- When a player switches to a synced server, their active pet is saved to the shared MySQL database and automatically spawned on the destination server
-- Revoking a pet on any server clears the record network-wide — no ghost spawns
-- Only servers listed under `synced-servers` in the Velocity config participate; all other servers are unaffected
+Die Permissions stehen in der `config.yml` und sind frei aenderbar.
 
-**Quick setup:**
-1. Enable MySQL in MCPets and point all synced servers at the same database
-2. Set `Velocity.Enabled: true` in MCPets `config.yml` on each synced server
-3. Drop `MCPets-Velocity-<version>.jar` into your Velocity proxy's `plugins/` folder
-4. Configure which servers to sync in `plugins/mcpets-velocity/config.yml` on the proxy
+## Menues
 
-See [mcpets-velocity/README.md](mcpets-velocity/README.md) for full setup instructions and configuration options.
+Im Java-Code steht keine Slot-Nummer, kein Material und kein Anzeigetext. Alles
+kommt aus `menus.yml`; es gibt genau einen Provider, der zeichnet, was dort steht.
 
----
+* **Hauptmenue** - drei Buttons: das gerade aktive Pet (ohne aktives Pet ein frei
+  konfigurierbares Ersatz-Item, standardmaessig eine Barrier), das Menue mit allen
+  Pets und das Menue mit den eigenen Pets.
+* **Alle Pets / Deine Pets** - paginiert, mit Suche und Sortierung aus Sharks
+  GUI-Steuerung. Die Slots dafuer stehen unter `controls`.
+* **Einstellungen** - Namen aendern (ueber die Paper Dialog API), Namen
+  zuruecksetzen, Pet absetzen.
 
-<img src="https://i.ibb.co/Sn460M4/patreon-advantages.png" alt="Patreon advantages">
+Auf einem Pet-Eintrag gilt: **Linksklick aktiviert**, **Rechtsklick oeffnet die
+Einstellungen** - beides nur, wenn der Spieler das Pet besitzt.
 
-⭕ Download some exclusive content and monthly releases on the [Patreon](https://www.patreon.com/tofnocsy_workshop)
+## Besitz
 
-⭕ Get involved in the creation progress by picking your favorite model in a monthly selection
+Ein Pet gehoert einem Spieler auf zwei Wegen:
 
-⭕ Access a patron-only channel on my [Discord's workshop](https://discord.gg/p7QTm2gUyf)
+1. es wurde ihm mit `/pets admin give` gegeben (steht in MongoDB), oder
+2. seine Permission aus `pets.yml` schaltet es frei.
 
-# ✨ Partner ✨
+`/pets admin remove` nimmt nur den Datenbank-Besitz weg - ein Pet aus einer
+Permission wird ueber die Permission entzogen.
 
-Download more pets on [MCModels.net](https://mcmodels.net/)
+## Speicherung und Serversync
 
-![image](https://cdn.discordapp.com/attachments/884364895108366336/909534639650136064/partnered.png)
+Besitz, aktives Pet und die Einstellungen je Spieler und Pet liegen in MongoDB.
+Aendert sich etwas, geht eine kurze Nachricht ueber Redis an die anderen Server,
+die daraufhin ihren Cache verwerfen. Geht so eine Nachricht verloren, ist der
+Zustand nur kurz veraltet - die verlaessliche Quelle bleibt die Datenbank.
 
+Wer einen Reload garantiert auf jedem Server sehen will, schaltet in der
+`config.yml` zusaetzlich RabbitMQ dazu (`messaging.broker.enabled`). Jeder Server
+bekommt dann seine eigene Queue am selben Fanout-Exchange.
+
+## Lizenz
+
+GNU General Public License v3.0, siehe [LICENSE](LICENSE).

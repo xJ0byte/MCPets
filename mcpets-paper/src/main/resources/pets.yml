@@ -1,0 +1,92 @@
+# ---------------------------------------------------------------------------
+#  MCPets - Pets
+#
+#  Jeder Eintrag unter "pets" ist ein Pet. Der Schluessel ist die Pet-ID, die in
+#  /pets admin give <spieler> <pet> benutzt wird.
+#
+#  model            Modellname, den BetterModel kennt (bleibt ohne Endung).
+#  name             Standard-Anzeigename ueber dem Pet, MiniMessage.
+#                   Der Spieler kann ihn im Einstellungsmenue ueberschreiben.
+#  permission       Permission zum Besitzen. Leer lassen = keine noetig.
+#  base-entity      Unsichtbare Entity, die das Modell traegt.
+#  scale            Groesse des Modells.
+#  name-visible     Nametag dauerhaft anzeigen.
+#  nametag-bone     Bone im Modell, an dem das Nametag haengt.
+#  hidden-when-locked  Pet im Alle-Pets-Menue verstecken, solange man es nicht besitzt.
+#  animations       Animationsnamen aus dem Modell. Weglassen = keine Animation.
+#  icon             Das Item im Menue. <pet_name>, <pet_id> und <owner> stehen zur
+#                   Verfuegung, ebenso die Lore-Marker aus der menus.yml.
+# ---------------------------------------------------------------------------
+
+pets:
+
+  wolf:
+    model: pet_wolf
+    name: "<primary>Wolf"
+    permission: ""
+    base-entity: ARMOR_STAND
+    scale: 1.0
+    name-visible: true
+    nametag-bone: name
+    hidden-when-locked: false
+    animations:
+      idle: idle
+      walk: walk
+      spawn: spawn
+    icon:
+      material: BONE
+      name: "<primary><pet_name>"
+      custom-model-data: 0
+      amount: 1
+      lore:
+        - "<muted>Ein treuer Begleiter."
+        - ""
+        - "<status>"
+        - "<actions>"
+
+  cat:
+    model: pet_cat
+    name: "<primary>Katze"
+    permission: "mcpets.pet.cat"
+    base-entity: ARMOR_STAND
+    scale: 0.9
+    name-visible: true
+    nametag-bone: name
+    hidden-when-locked: false
+    animations:
+      idle: idle
+      walk: walk
+    icon:
+      material: STRING
+      name: "<primary><pet_name>"
+      custom-model-data: 0
+      amount: 1
+      lore:
+        - "<muted>Geht eigene Wege."
+        - ""
+        - "<status>"
+        - "<actions>"
+
+  dragon:
+    model: pet_dragon
+    name: "<secondary>Drache"
+    permission: "mcpets.pet.dragon"
+    base-entity: ARMOR_STAND
+    scale: 1.4
+    name-visible: true
+    nametag-bone: name
+    hidden-when-locked: true
+    animations:
+      idle: idle
+      walk: fly
+      spawn: spawn
+    icon:
+      material: DRAGON_HEAD
+      name: "<secondary><pet_name>"
+      custom-model-data: 0
+      amount: 1
+      lore:
+        - "<muted>Selten und laut."
+        - ""
+        - "<status>"
+        - "<actions>"
