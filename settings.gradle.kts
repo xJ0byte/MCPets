@@ -30,6 +30,9 @@ dependencyResolutionManagement {
         maven("https://repo.extendedclip.com/releases/") {
             name = "placeholderapi"
         }
+        maven("https://repo.momirealms.net/releases/") {
+            name = "momirealms"
+        }
     }
 }
 

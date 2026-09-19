@@ -16,6 +16,14 @@
 #  animations       Animationsnamen aus dem Modell. Weglassen = keine Animation.
 #  icon             Das Item im Menue. <pet_name>, <pet_id> und <owner> stehen zur
 #                   Verfuegung, ebenso die Lore-Marker aus der menus.yml.
+#                   material darf sein:
+#                     - ein Bukkit-Material          (DIAMOND, BONE, ...)
+#                     - ein CraftEngine-Item         (namespace:id)
+#                     - ein ItemsAdder-Item          (namespace:id)
+#                   Bei namespace:id wird zuerst CraftEngine gefragt, dann
+#                   ItemsAdder, dann Bukkit. name, lore und custom-model-data
+#                   ueberschreiben das, was das Custom-Item mitbringt; wer sie
+#                   weglaesst, behaelt Name und Lore aus CraftEngine.
 # ---------------------------------------------------------------------------
 
 pets:
@@ -67,6 +75,8 @@ pets:
         - "<status>"
         - "<actions>"
 
+  # Fuer ein CraftEngine-Item hier einfach material auf die namespace:id
+  # setzen, z. B. "material: meinpack:drachen_token".
   dragon:
     model: pet_dragon
     name: "<secondary>Drache"

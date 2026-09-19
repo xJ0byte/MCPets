@@ -8,6 +8,7 @@ import de.j0byte.mcpets.api.message.PetSyncMessage;
 import de.j0byte.mcpets.paper.config.ConfigManager;
 import de.j0byte.mcpets.paper.config.MenuConfig;
 import de.j0byte.mcpets.paper.config.PetDefinition;
+import de.j0byte.mcpets.paper.item.ItemFactory;
 import de.j0byte.mcpets.paper.pet.PetService;
 import de.j0byte.mcpets.paper.storage.PetDataService;
 import de.j0byte.mcpets.paper.storage.PetSyncService;
@@ -38,6 +39,7 @@ public class MenuService {
     private final PetService pets;
     private final PetSyncService sync;
     private final Shark shark;
+    private final ItemFactory items;
     private final Provider<RenameDialog> renameDialog;
     private final Logger logger;
 
@@ -48,6 +50,7 @@ public class MenuService {
             @NotNull final PetService pets,
             @NotNull final PetSyncService sync,
             @NotNull final Shark shark,
+            @NotNull final ItemFactory items,
             @NotNull final Provider<RenameDialog> renameDialog,
             @NotNull final Logger logger) {
 
@@ -56,6 +59,7 @@ public class MenuService {
         this.pets = pets;
         this.sync = sync;
         this.shark = shark;
+        this.items = items;
         this.renameDialog = renameDialog;
         this.logger = logger;
     }
@@ -309,6 +313,11 @@ public class MenuService {
     @NotNull
     Shark shark() {
         return this.shark;
+    }
+
+    @NotNull
+    ItemFactory items() {
+        return this.items;
     }
 
     @NotNull

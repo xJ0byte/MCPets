@@ -6,13 +6,12 @@ import de.j0byte.mcpets.paper.config.MenuConfig;
 import de.j0byte.mcpets.paper.config.MenuItemConfig;
 import de.j0byte.mcpets.paper.config.PetListConfig;
 import de.j0byte.mcpets.paper.config.PetDefinition;
+import de.j0byte.mcpets.paper.item.ItemFactory;
 import de.j0byte.shark.gui.ClickableItem;
 import de.j0byte.shark.gui.InventoryContents;
 import de.j0byte.shark.gui.InventoryProvider;
 import de.j0byte.shark.gui.PagedBuilder;
-import de.j0byte.shark.gui.SharkInventories;
 import de.j0byte.shark.gui.SlotPos;
-import de.j0byte.shark.gui.item.ButtonFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -304,8 +303,9 @@ final class ConfiguredMenu implements InventoryProvider {
     }
 
     /**
-     * Baut das Item ueber Sharks {@code ButtonFactory}: erst PlaceholderAPI, dann
-     * MiniMessage, dazu die Lore-Bloecke und die Pet-Platzhalter.
+     * Baut das Item ueber die {@link ItemFactory}: CraftEngine-Items ueber
+     * CraftEngine, alles andere ueber Sharks {@code ButtonFactory} - in beiden
+     * Faellen mit Lore-Bloecken und Pet-Platzhaltern.
      */
     @NotNull
     private ItemStack build(
@@ -314,8 +314,7 @@ final class ConfiguredMenu implements InventoryProvider {
             @NotNull final Map<String, List<String>> loreBlocks,
             @Nullable final PetDefinition definition) {
 
-        final ButtonFactory factory = SharkInventories.controls().buttons();
         final TagResolver[] placeholders = this.service.placeholders(player, definition);
-        return factory.create(item.toButton(), player, loreBlocks, placeholders);
+        return this.service.items().create(item, player, loreBlocks, placeholders);
     }
 }

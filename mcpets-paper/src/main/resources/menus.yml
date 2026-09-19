@@ -24,6 +24,11 @@
 #    item          Das Item.
 #    empty-item    Nur bei type: ACTIVE_PET - was gezeigt wird, wenn kein Pet aktiv ist.
 #
+#  material in jedem item-Block darf ein Bukkit-Material sein (DIAMOND, ARROW, ...)
+#  oder ein Custom-Item als namespace:id. Bei namespace:id wird zuerst CraftEngine
+#  gefragt, dann ItemsAdder, dann Bukkit. name, lore und custom-model-data
+#  ueberschreiben dabei das, was das Custom-Item selbst mitbringt.
+#
 #  pet-list.lore-blocks ersetzt in der Pet-Lore (pets.yml) eine Zeile, die nur aus
 #  einem Marker besteht, durch die Zeilen des passenden Zustands. Zustaende sind
 #  active, owned und not-owned.
