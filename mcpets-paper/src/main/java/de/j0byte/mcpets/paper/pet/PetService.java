@@ -27,6 +27,8 @@ import kr.toxicity.model.api.util.function.BonePredicate;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
@@ -53,6 +55,9 @@ public class PetService {
     private final PetSyncService sync;
     private final Shark shark;
     private final Logger logger;
+
+    /** Obergrenze fuer die Bodensuche, damit ein grosses Suchfenster den Tick nicht belastet. */
+    private static final int MAX_GROUND_SCAN = 64;
 
     private final Map<UUID, ActivePet> active = new ConcurrentHashMap<>();
 
@@ -285,44 +290,134 @@ public class PetService {
             return;
         }
 
-        final double distance = current.distance(target);
-        if (distance <= general.getFollowStartDistance()) {
-            lookAt(pet, target);
-            setWalking(pet, false);
+        // Nur waagerecht messen und laufen. Der Hoehenunterschied ist Sache der
+        // Boden-Korrektur - sonst wuerde das Pet dem Besitzer in die Luft folgen,
+        // sobald der springt oder irgendwo hochklettert.
+        final double distance = horizontalDistance(current, target);
+        final boolean walking = distance > general.getFollowStartDistance();
+
+        final Location next = current.clone();
+        if (walking) {
+            step(general, next, target, distance);
+        }
+
+        // Laeuft in jedem Durchlauf, auch im Stand: bleibt das Pet nach einem Sprung
+        // des Besitzers in der Luft haengen, holt es das hier wieder herunter.
+        applyGround(general, next, target);
+        faceTowards(next, target);
+
+        if (moved(current, next)) {
+            pet.getBaseEntity().teleport(next);
+        }
+        setWalking(pet, walking);
+    }
+
+    /**
+     * Schiebt {@code next} ein Stueck waagerecht Richtung Besitzer.
+     *
+     * <p>Die Schrittweite waechst mit der Entfernung, sonst haengt das Pet beim
+     * Sprinten zurueck.</p>
+     */
+    private void step(
+            @NotNull final GeneralConfig general,
+            @NotNull final Location next,
+            @NotNull final Location target,
+            final double distance) {
+
+        final double remaining = distance - general.getFollowStopDistance();
+        if (remaining <= 0.0D) {
             return;
         }
 
-        // Schrittweite waechst mit der Entfernung, sonst haengt das Pet beim Sprinten zurueck.
-        final double remaining = distance - general.getFollowStopDistance();
-        if (remaining <= 0.0D) {
-            setWalking(pet, false);
+        final Vector direction = target.toVector().subtract(next.toVector()).setY(0.0D);
+        if (direction.lengthSquared() < 1.0E-4D) {
             return;
         }
+
         final double step = Math.min(
                 remaining,
                 general.getFollowSpeed() * Math.max(1.0D, distance / general.getFollowStartDistance()));
-
-        final Vector direction = target.toVector().subtract(current.toVector());
-        if (direction.lengthSquared() < 1.0E-4D) {
-            setWalking(pet, false);
-            return;
-        }
-
-        final Location next = current.clone().add(direction.normalize().multiply(step));
-        next.setDirection(target.toVector().subtract(next.toVector()));
-
-        pet.getBaseEntity().teleport(next);
-        setWalking(pet, true);
+        next.add(direction.normalize().multiply(step));
     }
 
-    private void lookAt(@NotNull final ActivePet pet, @NotNull final Location target) {
-        final Location current = pet.getBaseEntity().getLocation();
-        final Vector direction = target.toVector().subtract(current.toVector());
-        if (direction.lengthSquared() < 1.0E-4D) {
+    /**
+     * Setzt das Pet auf den naechsten begehbaren Block.
+     *
+     * <p>Gesucht wird von oberhalb der hoeheren der beiden Positionen abwaerts, damit
+     * sowohl das Hochsteigen auf eine Stufe als auch der Sturz von einer Kante
+     * gefunden wird. Findet sich in dem Fenster kein Boden - der Besitzer fliegt
+     * also wirklich - bleibt die Hoehe, wie sie ist.</p>
+     */
+    private void applyGround(
+            @NotNull final GeneralConfig general,
+            @NotNull final Location location,
+            @NotNull final Location owner) {
+
+        if (!general.isGroundSnapEnabled()) {
             return;
         }
-        current.setDirection(direction);
-        pet.getBaseEntity().teleport(current);
+        surfaceY(general, location, owner).ifPresent(location::setY);
+    }
+
+    @NotNull
+    private java.util.OptionalDouble surfaceY(
+            @NotNull final GeneralConfig general,
+            @NotNull final Location location,
+            @NotNull final Location owner) {
+
+        final World world = location.getWorld();
+        if (world == null) {
+            return java.util.OptionalDouble.empty();
+        }
+
+        final int x = location.getBlockX();
+        final int z = location.getBlockZ();
+
+        // Kein synchrones Nachladen im Tick: ist der Chunk nicht da, lieber nicht korrigieren.
+        if (!world.isChunkLoaded(x >> 4, z >> 4)) {
+            return java.util.OptionalDouble.empty();
+        }
+
+        final int highest = (int) Math.floor(Math.max(location.getY(), owner.getY()));
+        final int lowest = (int) Math.floor(Math.min(location.getY(), owner.getY()));
+
+        int from = Math.min(highest + general.getGroundMaxStepUp(), world.getMaxHeight() - 1);
+        final int to = Math.max(lowest - general.getGroundMaxDrop(), world.getMinHeight());
+
+        // Deckel gegen sehr grosse Suchfenster, etwa bei hoch gesetzter teleport-distance.
+        from = Math.min(from, to + MAX_GROUND_SCAN);
+
+        for (int y = from; y >= to; y--) {
+            final Block block = world.getBlockAt(x, y, z);
+            if (!block.isPassable() || (general.isGroundStandOnLiquid() && block.isLiquid())) {
+                return java.util.OptionalDouble.of(y + 1.0D);
+            }
+        }
+        return java.util.OptionalDouble.empty();
+    }
+
+    /**
+     * @return waagerechter Abstand, die Hoehe bleibt bewusst aussen vor
+     */
+    private static double horizontalDistance(@NotNull final Location from, @NotNull final Location to) {
+        final double dx = to.getX() - from.getX();
+        final double dz = to.getZ() - from.getZ();
+        return Math.sqrt(dx * dx + dz * dz);
+    }
+
+    private static void faceTowards(@NotNull final Location location, @NotNull final Location target) {
+        final Vector direction = target.toVector().subtract(location.toVector()).setY(0.0D);
+        if (direction.lengthSquared() >= 1.0E-4D) {
+            location.setDirection(direction);
+        }
+    }
+
+    /**
+     * Ob sich ein Teleport ueberhaupt lohnt - spart Pakete, wenn das Pet still steht.
+     */
+    private static boolean moved(@NotNull final Location from, @NotNull final Location to) {
+        return from.distanceSquared(to) > 1.0E-4D
+                || Math.abs(from.getYaw() - to.getYaw()) > 1.0F;
     }
 
     /**
@@ -368,10 +463,13 @@ public class PetService {
         // Schaut der Spieler senkrecht nach oben oder unten, ist der waagerechte
         // Anteil null - normalize() wuerde daraus NaN machen und die Entity ins
         // Nirgendwo teleportieren.
-        if (direction.lengthSquared() < 1.0E-4D) {
-            return location;
+        if (direction.lengthSquared() >= 1.0E-4D) {
+            location.subtract(direction.normalize().multiply(this.configs.general().getSpawnOffset()));
         }
-        return location.subtract(direction.normalize().multiply(this.configs.general().getSpawnOffset()));
+
+        // Auch beim Spawnen und beim Hinterherteleportieren gehoert das Pet auf den Boden.
+        applyGround(this.configs.general(), location, owner.getLocation());
+        return location;
     }
 
     /**

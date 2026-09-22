@@ -79,6 +79,25 @@ public class GeneralConfig {
     @Comment("Blocks pro Durchlauf, die sich das Pet dem Besitzer naehert.")
     private double followSpeed = 0.35D;
 
+    @Key("pets.follow.ground-snap.enabled")
+    @Comment({
+            "Das Pet immer auf einen begehbaren Block setzen.",
+            "Ohne das schwebt es dort, wo der Besitzer zuletzt hochgesprungen ist -",
+            "die Basis-Entity hat keine Schwerkraft und wird von uns bewegt."})
+    private boolean groundSnapEnabled = true;
+
+    @Key("pets.follow.ground-snap.max-step-up")
+    @Comment("Wie viele Bloecke das Pet auf einmal hochsteigen darf.")
+    private int groundMaxStepUp = 3;
+
+    @Key("pets.follow.ground-snap.max-drop")
+    @Comment("Wie tief unter dem Besitzer noch nach Boden gesucht wird.")
+    private int groundMaxDrop = 16;
+
+    @Key("pets.follow.ground-snap.stand-on-liquid")
+    @Comment("Auf Wasser und Lava stehen, statt bis zum Grund durchzusacken.")
+    private boolean groundStandOnLiquid = true;
+
     @Key("pets.spawn.offset")
     @Comment("Wie weit hinter dem Besitzer das Pet erscheint.")
     private double spawnOffset = 1.5D;
