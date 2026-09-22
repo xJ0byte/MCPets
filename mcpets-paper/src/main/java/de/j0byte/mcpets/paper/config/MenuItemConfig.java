@@ -13,7 +13,8 @@ import org.jetbrains.annotations.Nullable;
  * @param action    was ein Klick ausloest
  * @param target    Ziel-Menue bei {@link MenuAction#OPEN_MENU}
  * @param item      das Item selbst
- * @param emptyItem Ersatz-Item fuer {@link Type#ACTIVE_PET}, wenn kein Pet aktiv ist
+ * @param emptyItem  Ersatz-Item fuer {@link Type#ACTIVE_PET}, wenn kein Pet aktiv ist
+ * @param loreBlocks Lore-Bloecke fuer die Marker im Pet-Icon, Marker-Name auf Zeilen
  */
 public record MenuItemConfig(
         @NotNull String key,
@@ -22,7 +23,8 @@ public record MenuItemConfig(
         @NotNull MenuAction action,
         @Nullable String target,
         @Nullable ItemConfig item,
-        @Nullable ItemConfig emptyItem) {
+        @Nullable ItemConfig emptyItem,
+        @NotNull java.util.Map<String, java.util.List<String>> loreBlocks) {
 
     /** Slot-Wert, der einen Button ausblendet. */
     public static final int HIDDEN = -1;
@@ -33,8 +35,9 @@ public record MenuItemConfig(
         STATIC,
 
         /**
-         * Zeigt das gerade aktive Pet. Hat der Spieler keins aktiv, wird
-         * {@code empty-item} angezeigt - in der Standard-Config eine Barrier.
+         * Zeigt das gerade aktive Pet mit seinem eigenen Icon aus der {@code pets.yml} -
+         * also genau so, wie es auch in der Pet-Liste aussieht. Hat der Spieler keins
+         * aktiv, wird {@code empty-item} angezeigt, in der Standard-Config eine Barrier.
          */
         ACTIVE_PET;
 
@@ -53,7 +56,25 @@ public record MenuItemConfig(
                 MenuAction.parse(section.getString("action", "NONE")),
                 section.getString("target"),
                 ItemConfig.read(section.section("item")),
-                ItemConfig.read(section.section("empty-item")));
+                ItemConfig.read(section.section("empty-item")),
+                readLoreBlocks(section.section("lore-blocks")));
+    }
+
+    /**
+     * Liest {@code lore-blocks: <marker>: [zeilen]}.
+     */
+    @NotNull
+    private static java.util.Map<String, java.util.List<String>> readLoreBlocks(
+            @Nullable final ConfigSection section) {
+
+        if (section == null) {
+            return java.util.Map.of();
+        }
+        final var result = new java.util.LinkedHashMap<String, java.util.List<String>>();
+        for (final String marker : section.keys(false)) {
+            result.put(marker, java.util.List.copyOf(section.getStringList(marker)));
+        }
+        return java.util.Map.copyOf(result);
     }
 
     public boolean visible() {

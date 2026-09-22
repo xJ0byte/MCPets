@@ -135,11 +135,30 @@ public class ConfigManager {
         this.logger.info("Loaded " + this.pets.size() + " pets from " + PETS_FILE + ".");
     }
 
+    /**
+     * Meldet Eintraege, die stillschweigend wirkungslos waeren.
+     *
+     * <p>Ein {@code item} an einem {@code ACTIVE_PET}-Button etwa: dort kommt das
+     * Icon aus der {@code pets.yml}, der Eintrag wuerde also nichts tun. Lieber
+     * einmal im Log sagen, als jemanden suchen lassen, warum sein Item nicht kommt.</p>
+     */
+    private void warnAboutUnusedItems(@NotNull final MenuConfig menu) {
+        for (final MenuItemConfig item : menu.items().values()) {
+            if (item.type() == MenuItemConfig.Type.ACTIVE_PET && item.item() != null) {
+                this.logger.warning("Menu '" + menu.id() + "', button '" + item.key()
+                        + "': 'item' is ignored for type ACTIVE_PET - the icon comes from pets.yml. "
+                        + "Use 'lore-blocks' to fill the markers in that icon.");
+            }
+        }
+    }
+
     private void readMenus() {
         final Map<String, MenuConfig> result = new LinkedHashMap<>();
         for (final var entry : this.menusFile.sections("menus").entrySet()) {
             try {
-                result.put(entry.getKey(), MenuConfig.read(entry.getKey(), entry.getValue()));
+                final MenuConfig menu = MenuConfig.read(entry.getKey(), entry.getValue());
+                warnAboutUnusedItems(menu);
+                result.put(entry.getKey(), menu);
             } catch (final RuntimeException exception) {
                 this.logger.warning("Skipping menu '" + entry.getKey() + "': " + exception.getMessage());
             }

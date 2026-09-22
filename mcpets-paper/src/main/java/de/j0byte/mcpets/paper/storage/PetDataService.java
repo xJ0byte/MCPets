@@ -40,6 +40,15 @@ public class PetDataService {
     /** Damit die Warnung ueber ein fehlendes Profil nicht bei jedem Klick erneut kommt. */
     private final java.util.Set<UUID> warnedAboutMissingProfile = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Zaehlt pro Spieler jede Aenderung an Besitz, aktivem Pet oder Einstellungen.
+     *
+     * <p>Offene Menues vergleichen den Stand bei jedem Tick mit dem, den sie gezeichnet
+     * haben, und rendern neu, sobald er sich unterscheidet. Damit steht ein neuer
+     * Pet-Name sofort im Menue, ohne dass es jemand neu oeffnen muss.</p>
+     */
+    private final Map<UUID, java.util.concurrent.atomic.AtomicLong> revisions = new ConcurrentHashMap<>();
+
     @Inject
     public PetDataService(
             @NotNull final Plugin plugin,
@@ -92,6 +101,7 @@ public class PetDataService {
     public void invalidate(@NotNull final UUID uuid) {
         this.profiles.remove(uuid);
         this.settings.keySet().removeIf(key -> key.startsWith(uuid + ":"));
+        bumpRevision(uuid);
 
         // Nur wegwerfen reicht nicht: fuer einen online Spieler beantwortet ein
         // leerer Cache jede Besitzfrage mit "nein", und nachgeladen wird sonst erst
@@ -132,12 +142,27 @@ public class PetDataService {
     private void cache(@NotNull final PetProfile profile, @NotNull final List<PetSettings> all) {
         this.profiles.put(profile.getUuid(), profile);
         this.warnedAboutMissingProfile.remove(profile.getUuid());
+        bumpRevision(profile.getUuid());
         for (final PetSettings value : all) {
             this.settings.put(value.getId(), value);
         }
     }
 
     // ------------------------------------------------------------------ Lesen
+
+    /**
+     * @return Stand der Daten dieses Spielers; aendert sich bei jeder Aenderung
+     */
+    public long revision(@NotNull final UUID uuid) {
+        final java.util.concurrent.atomic.AtomicLong value = this.revisions.get(uuid);
+        return value == null ? 0L : value.get();
+    }
+
+    private void bumpRevision(@NotNull final UUID uuid) {
+        this.revisions
+                .computeIfAbsent(uuid, key -> new java.util.concurrent.atomic.AtomicLong())
+                .incrementAndGet();
+    }
 
     /**
      * @return das gecachte Profil, oder leer wenn der Spieler nicht geladen ist
@@ -216,6 +241,7 @@ public class PetDataService {
             return CompletableFuture.completedFuture(null);
         }
         profile.setActivePet(petId);
+        bumpRevision(uuid);
         return persist(profile);
     }
 
@@ -241,6 +267,7 @@ public class PetDataService {
     @NotNull
     public CompletableFuture<Void> saveSettings(@NotNull final PetSettings value) {
         this.settings.put(value.getId(), value);
+        bumpRevision(value.getOwner());
         return this.storage.saveSettings(value)
                 .thenAccept(saved -> {
                 })
@@ -262,9 +289,11 @@ public class PetDataService {
 
         final PetProfile cached = this.profiles.get(uuid);
         if (cached != null) {
-            final boolean changed = change.test(cached);
-            return changed ? persist(cached).thenApply(ignored -> true)
-                    : CompletableFuture.completedFuture(false);
+            if (!change.test(cached)) {
+                return CompletableFuture.completedFuture(false);
+            }
+            bumpRevision(uuid);
+            return persist(cached).thenApply(ignored -> true);
         }
 
         return this.storage.findProfile(uuid).thenCompose(found -> {
@@ -280,6 +309,7 @@ public class PetDataService {
                 if (online != null) {
                     this.profiles.put(uuid, profile);
                 }
+                bumpRevision(uuid);
                 return true;
             });
         });

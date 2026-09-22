@@ -24,8 +24,11 @@
 #    action        NONE, OPEN_MENU, CLOSE, DESPAWN, OPEN_ACTIVE_SETTINGS,
 #                  RENAME, RESET_NAME
 #    target        Ziel-Menue bei OPEN_MENU.
-#    item          Das Item.
+#    item          Das Item. Bei type: ACTIVE_PET wird es nicht benutzt - dort kommt
+#                  das Icon des Pets aus der pets.yml.
 #    empty-item    Nur bei type: ACTIVE_PET - was gezeigt wird, wenn kein Pet aktiv ist.
+#    lore-blocks   Belegt die Marker in der Lore des Pet-Icons, Marker auf Zeilen.
+#                  Nur bei type: ACTIVE_PET; in der Pet-Liste macht das pet-list.lore-blocks.
 #
 #  material in jedem item-Block darf ein Bukkit-Material sein (DIAMOND, ARROW, ...)
 #  oder ein Custom-Item als namespace:id. Bei namespace:id wird zuerst CraftEngine
@@ -56,13 +59,13 @@ menus:
         slot: 11
         type: ACTIVE_PET
         action: OPEN_ACTIVE_SETTINGS
-        item:
-          material: NAME_TAG
-          name: "<primary>Aktives Pet<muted>: <secondary><pet_name>"
-          custom-model-data: 0
-          lore:
-            - "<muted>Dein Pet ist gerade unterwegs."
-            - ""
+        # Gezeigt wird das Icon des aktiven Pets aus der pets.yml - dasselbe Item wie
+        # in der Pet-Liste. Ein eigenes "item" gibt es hier deshalb nicht; belegt
+        # werden nur die Lore-Marker, die im Icon stehen.
+        lore-blocks:
+          status:
+            - "<success>Gerade aktiv"
+          actions:
             - "<text>Klick <muted>- Einstellungen oeffnen"
         empty-item:
           material: BARRIER

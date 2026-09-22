@@ -48,14 +48,49 @@ final class ConfiguredMenu implements InventoryProvider {
         this.context = context;
     }
 
+    /**
+     * Mindestabstand zwischen zwei Neuzeichnungen.
+     *
+     * <p>Reine Vorsichtsmassnahme: sollte ein Zeichenvorgang jemals selbst eine
+     * Aenderung ausloesen, gaebe es sonst einen Render pro Tick. Vier Ticks sind
+     * fuer den Spieler nicht wahrnehmbar und deckeln das zuverlaessig.</p>
+     */
+    private static final int MIN_REFRESH_TICKS = 4;
+
+    /** Stand der Spielerdaten, mit dem dieses Menue zuletzt gezeichnet wurde. */
+    private long renderedRevision = Long.MIN_VALUE;
+
+    private int ticksSinceRender;
+
     @Override
     public void init(@NotNull final Player player, @NotNull final InventoryContents contents) {
+        this.renderedRevision = this.service.data().revision(player.getUniqueId());
+        this.ticksSinceRender = 0;
+
         // Reihenfolge ist wichtig: der Rand zuerst, dann Pets und Buttons darueber,
         // und ganz zum Schluss der Fueller fuer das, was dann noch leer ist.
         drawBorderFiller(player, contents);
         drawPetList(player, contents);
         drawItems(player, contents);
         drawEmptyFiller(player, contents);
+    }
+
+    /**
+     * Zeichnet neu, sobald sich die Daten des Spielers geaendert haben.
+     *
+     * <p>Laeuft jeden Tick, vergleicht aber nur eine Zahl. Dadurch steht ein neuer
+     * Pet-Name sofort in der Lore, auch wenn das Menue waehrenddessen offen bleibt -
+     * und genauso ein Pet, das gerade von einem anderen Server dazugekommen ist.</p>
+     */
+    @Override
+    public void update(@NotNull final Player player, @NotNull final InventoryContents contents) {
+        this.ticksSinceRender++;
+
+        final long current = this.service.data().revision(player.getUniqueId());
+        if (current == this.renderedRevision || this.ticksSinceRender < MIN_REFRESH_TICKS) {
+            return;
+        }
+        init(player, contents);
     }
 
     // ------------------------------------------------------------------ Fueller
@@ -251,11 +286,11 @@ final class ConfiguredMenu implements InventoryProvider {
             return Optional.of(ClickableItem.empty(build(config.emptyItem(), player, Map.of())));
         }
 
-        if (config.item() == null) {
-            return Optional.empty();
-        }
+        // Das Pet selbst zeigen, mit genau dem Icon aus der pets.yml, das auch in der
+        // Pet-Liste steht. Ein eigenes "item" am Button waere hier nur eine zweite
+        // Stelle, an der dasselbe Pet anders aussieht.
         final PetDefinition definition = active.get();
-        final ItemStack stack = build(config.item(), player, Map.of(), definition);
+        final ItemStack stack = build(definition.icon(), player, config.loreBlocks(), definition);
         return Optional.of(clickable(stack, config, definition));
     }
 
