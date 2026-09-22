@@ -50,25 +50,59 @@ final class ConfiguredMenu implements InventoryProvider {
 
     @Override
     public void init(@NotNull final Player player, @NotNull final InventoryContents contents) {
-        drawFiller(player, contents);
+        // Reihenfolge ist wichtig: der Rand zuerst, dann Pets und Buttons darueber,
+        // und ganz zum Schluss der Fueller fuer das, was dann noch leer ist.
+        drawBorderFiller(player, contents);
         drawPetList(player, contents);
         drawItems(player, contents);
+        drawEmptyFiller(player, contents);
     }
 
     // ------------------------------------------------------------------ Fueller
 
-    private void drawFiller(@NotNull final Player player, @NotNull final InventoryContents contents) {
-        final ItemConfig filler = this.menu.filler();
-        if (filler == null) {
+    /**
+     * Legt den Fueller auf die Randslots - nur bei {@code fill-borders: true}.
+     */
+    private void drawBorderFiller(@NotNull final Player player, @NotNull final InventoryContents contents) {
+        if (!this.menu.fillBorders()) {
+            return;
+        }
+        filler(player).ifPresent(contents::fillBorders);
+    }
+
+    /**
+     * Legt den Fueller auf alles, was am Ende noch leer ist - nur bei {@code fill-empty: true}.
+     *
+     * <p>Laeuft bewusst als letztes und ueberschreibt nichts: belegte Slots bleiben,
+     * wie sie sind. Stehen beide Schalter auf {@code false}, bleibt das Menue leer -
+     * genau das, was "Fueller aus" heissen soll.</p>
+     */
+    private void drawEmptyFiller(@NotNull final Player player, @NotNull final InventoryContents contents) {
+        if (!this.menu.fillEmpty()) {
             return;
         }
 
-        final ClickableItem item = ClickableItem.empty(build(filler, player, Map.of()));
-        if (this.menu.fillBorders()) {
-            contents.fillBorders(item);
+        final Optional<ClickableItem> filler = filler(player);
+        if (filler.isEmpty()) {
             return;
         }
-        contents.fill(item);
+
+        for (int row = 0; row < this.menu.rows(); row++) {
+            for (int column = 0; column < MenuConfig.COLUMNS; column++) {
+                final SlotPos slot = SlotPos.of(row, column);
+                if (contents.get(slot).isEmpty()) {
+                    contents.set(slot, filler.get());
+                }
+            }
+        }
+    }
+
+    @NotNull
+    private Optional<ClickableItem> filler(@NotNull final Player player) {
+        final ItemConfig filler = this.menu.filler();
+        return filler == null
+                ? Optional.empty()
+                : Optional.of(ClickableItem.empty(build(filler, player, Map.of())));
     }
 
     // ------------------------------------------------------------------ Pet-Liste

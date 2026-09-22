@@ -16,6 +16,7 @@ import de.j0byte.octopus.api.OctopusModule;
 import de.j0byte.shark.api.Shark;
 import de.j0byte.shark.api.SharkProvider;
 import java.util.logging.Level;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -65,6 +66,8 @@ public final class MCPetsPlugin extends JavaPlugin {
                 .registerEvents(this.injector.getInstance(PetListener.class), this);
         this.injector.getInstance(PetsCommand.class).register(this);
 
+        loadOnlinePlayers();
+
         getLogger().info("MCPets enabled with " + configs.pets().size() + " pets and "
                 + configs.menus().size() + " menus.");
     }
@@ -77,6 +80,21 @@ public final class MCPetsPlugin extends JavaPlugin {
         if (this.pets != null) {
             this.pets.stop();
             this.pets.despawnAll();
+        }
+    }
+
+    /**
+     * Laedt die Daten der Spieler, die jetzt schon online sind.
+     *
+     * <p>Normalerweise passiert das im {@code PlayerJoinEvent}. Wird das Plugin aber
+     * neu geladen, waehrend Spieler online sind, feuert das Event fuer sie nie - ihr
+     * Profil bliebe leer, und weil ein leerer Cache jede Besitzfrage mit "nein"
+     * beantwortet, haetten sie scheinbar kein einziges Pet mehr.</p>
+     */
+    private void loadOnlinePlayers() {
+        final PetDataService data = this.injector.getInstance(PetDataService.class);
+        for (final Player online : getServer().getOnlinePlayers()) {
+            data.refresh(online.getUniqueId(), online.getName());
         }
     }
 

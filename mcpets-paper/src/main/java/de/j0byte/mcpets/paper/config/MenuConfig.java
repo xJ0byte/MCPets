@@ -19,7 +19,8 @@ import org.jetbrains.annotations.Nullable;
  * @param title          MiniMessage-Titel
  * @param rows           Zeilen des Inventars
  * @param filler         Fueller-Item fuer leere Slots, oder {@code null}
- * @param fillBorders    ob der Fueller nur den Rand oder alle leeren Slots belegt
+ * @param fillBorders    ob der Fueller auf die Randslots kommt
+ * @param fillEmpty      ob der Fueller alle Slots belegt, die am Ende noch leer sind
  * @param items          alle Buttons, Schluessel ist der Config-Schluessel
  * @param petList        der paginierte Pet-Bereich, oder {@code null}
  * @param previousSlot   Slot des Zurueck-Buttons der Paginierung, oder {@code null}
@@ -33,6 +34,7 @@ public record MenuConfig(
         int rows,
         @Nullable ItemConfig filler,
         boolean fillBorders,
+        boolean fillEmpty,
         @NotNull Map<String, MenuItemConfig> items,
         @Nullable PetListConfig petList,
         @Nullable SlotPos previousSlot,
@@ -63,6 +65,7 @@ public record MenuConfig(
                 clampRows(section.getInt("rows", DEFAULT_ROWS)),
                 ItemConfig.read(section.section("filler")),
                 section.getBoolean("fill-borders", false),
+                section.getBoolean("fill-empty", false),
                 Map.copyOf(items),
                 PetListConfig.read(section.section("pet-list")),
                 slot(controls, "previous"),
