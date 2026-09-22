@@ -7,8 +7,11 @@
 #  Pro Menue:
 #    title         MiniMessage-Titel. <pet_name>, <pet_id> und <owner> stehen bereit.
 #    rows          Zeilen (1-6).
-#    fill-borders  true = Fueller nur am Rand, false = Fueller ueberall.
-#    filler        Das Fueller-Item. Weglassen = kein Fueller.
+#    filler        Das Fueller-Item. Weglassen = ueberhaupt kein Fueller.
+#    fill-borders  Fueller auf die Randslots.
+#    fill-empty    Fueller auf alles, was am Ende noch leer ist. Laeuft nach Pets
+#                  und Buttons und ueberschreibt nichts.
+#                  Beide Schalter auf false = kein Fueller, auch wenn filler gesetzt ist.
 #    pet-list      Der paginierte Pet-Bereich. Weglassen = Menue ohne Pet-Liste.
 #    controls      Slots fuer Blaettern, Suche und Sortierung. -1 blendet den Button aus.
 #                  Die Buttons selbst kommen aus Sharks globaler config.json.
@@ -41,6 +44,7 @@ menus:
     title: "<primary>Deine Pets"
     rows: 3
     fill-borders: false
+    fill-empty: true
     filler:
       material: GRAY_STAINED_GLASS_PANE
       name: " "
@@ -108,6 +112,7 @@ menus:
     title: "<primary>Alle Pets"
     rows: 6
     fill-borders: true
+    fill-empty: false
     filler:
       material: GRAY_STAINED_GLASS_PANE
       name: " "
@@ -159,6 +164,7 @@ menus:
     title: "<primary>Deine Pets"
     rows: 6
     fill-borders: true
+    fill-empty: false
     filler:
       material: GRAY_STAINED_GLASS_PANE
       name: " "
@@ -206,6 +212,7 @@ menus:
     title: "<primary><pet_name>"
     rows: 3
     fill-borders: false
+    fill-empty: true
     filler:
       material: GRAY_STAINED_GLASS_PANE
       name: " "

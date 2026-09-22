@@ -45,18 +45,32 @@ public class PetProfile {
         this.lastSeen = Instant.now();
     }
 
+    /**
+     * Die Liste kann aus der Datenbank als {@code null} zurueckkommen, wenn ein
+     * Dokument das Feld noch gar nicht hat. Deshalb hier und in {@link #grant} und
+     * {@link #revoke} immer ueber diesen Zugriff gehen - sonst faellt der erste
+     * Besitz-Check auf einem alten Dokument mit einer NPE um.
+     */
+    @NotNull
+    private List<String> pets() {
+        if (this.ownedPets == null) {
+            this.ownedPets = new ArrayList<>();
+        }
+        return this.ownedPets;
+    }
+
     public boolean owns(@NotNull final String petId) {
-        return this.ownedPets.contains(petId);
+        return pets().contains(petId);
     }
 
     /**
      * @return {@code true} wenn das Pet vorher nicht im Besitz war
      */
     public boolean grant(@NotNull final String petId) {
-        if (this.ownedPets.contains(petId)) {
+        if (pets().contains(petId)) {
             return false;
         }
-        this.ownedPets.add(petId);
+        pets().add(petId);
         return true;
     }
 
@@ -66,7 +80,7 @@ public class PetProfile {
      * @return {@code true} wenn das Pet vorher im Besitz war
      */
     public boolean revoke(@NotNull final String petId) {
-        if (!this.ownedPets.remove(petId)) {
+        if (!pets().remove(petId)) {
             return false;
         }
         if (petId.equals(this.activePet)) {

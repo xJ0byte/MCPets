@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,15 +30,23 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 public class PetDataService {
 
+    private final Plugin plugin;
     private final PetStorage storage;
     private final Logger logger;
 
     private final Map<UUID, PetProfile> profiles = new ConcurrentHashMap<>();
     private final Map<String, PetSettings> settings = new ConcurrentHashMap<>();
 
+    /** Damit die Warnung ueber ein fehlendes Profil nicht bei jedem Klick erneut kommt. */
+    private final java.util.Set<UUID> warnedAboutMissingProfile = ConcurrentHashMap.newKeySet();
+
     @Inject
     public PetDataService(
-            @NotNull final PetStorage storage, @PluginLogger @NotNull final Logger logger) {
+            @NotNull final Plugin plugin,
+            @NotNull final PetStorage storage,
+            @PluginLogger @NotNull final Logger logger) {
+
+        this.plugin = plugin;
         this.storage = storage;
         this.logger = logger;
     }
@@ -83,15 +92,46 @@ public class PetDataService {
     public void invalidate(@NotNull final UUID uuid) {
         this.profiles.remove(uuid);
         this.settings.keySet().removeIf(key -> key.startsWith(uuid + ":"));
+
+        // Nur wegwerfen reicht nicht: fuer einen online Spieler beantwortet ein
+        // leerer Cache jede Besitzfrage mit "nein", und nachgeladen wird sonst erst
+        // beim naechsten Join. Bis dahin waeren alle seine Pets verschwunden.
+        refreshIfOnline(uuid);
     }
 
     public void invalidateAll() {
         this.profiles.clear();
         this.settings.clear();
+
+        for (final Player online : this.plugin.getServer().getOnlinePlayers()) {
+            refresh(online.getUniqueId(), online.getName());
+        }
+    }
+
+    /**
+     * Laedt Profil und Einstellungen eines Spielers frisch aus MongoDB in den Cache.
+     */
+    @NotNull
+    public CompletableFuture<Void> refresh(@NotNull final UUID uuid, @NotNull final String name) {
+        return onJoin(uuid, name)
+                .thenAccept(profile -> {
+                })
+                .exceptionally(error -> {
+                    this.logger.log(Level.WARNING, "Failed to refresh the pet profile of " + uuid, error);
+                    return null;
+                });
+    }
+
+    private void refreshIfOnline(@NotNull final UUID uuid) {
+        final Player online = this.plugin.getServer().getPlayer(uuid);
+        if (online != null) {
+            refresh(uuid, online.getName());
+        }
     }
 
     private void cache(@NotNull final PetProfile profile, @NotNull final List<PetSettings> all) {
         this.profiles.put(profile.getUuid(), profile);
+        this.warnedAboutMissingProfile.remove(profile.getUuid());
         for (final PetSettings value : all) {
             this.settings.put(value.getId(), value);
         }
@@ -114,7 +154,26 @@ public class PetDataService {
      * {@link #owns(Player, PetDefinition)}.</p>
      */
     public boolean owns(@NotNull final UUID uuid, @NotNull final String petId) {
-        return profile(uuid).map(profile -> profile.owns(petId)).orElse(false);
+        final PetProfile profile = this.profiles.get(uuid);
+        if (profile != null) {
+            return profile.owns(petId);
+        }
+
+        // Ein leerer Cache wuerde hier stillschweigend "besitzt nichts" antworten.
+        // Fuer einen online Spieler ist das immer ein Fehler, also einmal melden und
+        // nachladen, statt es unbemerkt falsch zu beantworten.
+        warnAboutMissingProfile(uuid);
+        return false;
+    }
+
+    private void warnAboutMissingProfile(@NotNull final UUID uuid) {
+        final Player online = this.plugin.getServer().getPlayer(uuid);
+        if (online == null || !this.warnedAboutMissingProfile.add(uuid)) {
+            return;
+        }
+        this.logger.warning("No pet profile cached for " + online.getName()
+                + " although the player is online - reloading it from MongoDB.");
+        refresh(uuid, online.getName());
     }
 
     /**
@@ -213,7 +272,16 @@ public class PetDataService {
             if (!change.test(profile)) {
                 return CompletableFuture.completedFuture(false);
             }
-            return this.storage.saveProfile(profile).thenApply(saved -> true);
+            return this.storage.saveProfile(profile).thenApply(saved -> {
+                // Ist der Spieler online, gehoert das geaenderte Profil sofort in den
+                // Cache - sonst haelt ihn jede Besitzabfrage weiter fuer pet-los, bis
+                // er neu joint.
+                final Player online = this.plugin.getServer().getPlayer(uuid);
+                if (online != null) {
+                    this.profiles.put(uuid, profile);
+                }
+                return true;
+            });
         });
     }
 
